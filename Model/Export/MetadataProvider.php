@@ -60,8 +60,13 @@ class MetadataProvider extends \Magento\Ui\Model\Export\MetadataProvider
         // Remove all invisible columns as well as ids, and actions columns.
         $columns = array_filter($config['current']['columns'], fn($config, $key) => $config['visible'] && !in_array($key, ['ids', 'actions']), ARRAY_FILTER_USE_BOTH);;
         // Sort by position in grid.
-        uksort($columns, fn($a, $b) => $config['current']['positions'][$a] <=> $config['current']['positions'][$b]);
-
+        uksort($columns, fn($a, $b) =>
+            (
+                (isset($config['current']['positions'][$a]) && isset($config['current']['positions'][$b])) ?
+                    $config['current']['positions'][$a] <=> $config['current']['positions'][$b] : 0
+                // Don't bother changing positions if the config array doesn't contain that column array key.
+            )
+        );
         return array_keys($columns);
     }
 
@@ -126,7 +131,9 @@ class MetadataProvider extends \Magento\Ui\Model\Export\MetadataProvider
         $rowData = array_values(
             array_map(
                 function($field) use ($columnsType,$document) {
-                    if ($field == 'attribute_set_id') {
+                    if ($field == 'shared_catalog') {
+                        $columnData = '';
+                    } elseif ($field == 'attribute_set_id') {
                         $columnData = $this->getAttributeSetName($document, $field);
                     } elseif ($field == 'websites') {
                         $columnData = $this->getWebsiteName($document, $field);
